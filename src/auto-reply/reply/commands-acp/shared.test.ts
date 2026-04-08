@@ -35,7 +35,7 @@ describe("parseSpawnInput", () => {
     expect(parsed).toEqual({
       ok: false,
       error:
-        "Use either --thread or --bind for /acp spawn, not both. Usage: /acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>].",
+        "Use either --thread or --bind for /acp spawn, not both. Usage: `/acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>]`.",
     });
   });
 });

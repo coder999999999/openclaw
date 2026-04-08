@@ -14,20 +14,24 @@ import { resolveAcpCommandChannel, resolveAcpCommandThreadId } from "./context.j
 export { resolveAcpInstallCommandHint } from "./install-hints.js";
 
 export const COMMAND = "/acp";
+// Usage strings that contain `<placeholder>` tokens are wrapped in backticks so they
+// survive markdown-rendering channels (Slack, DingTalk, HTML-based transports), which
+// would otherwise strip the placeholders as unknown HTML tags. See #62877.
 export const ACP_SPAWN_USAGE =
-  "Usage: /acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>].";
+  "Usage: `/acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>]`.";
 export const ACP_STEER_USAGE =
-  "Usage: /acp steer [--session <session-key|session-id|session-label>] <instruction>";
+  "Usage: `/acp steer [--session <session-key|session-id|session-label>] <instruction>`";
 export const ACP_SET_MODE_USAGE =
-  "Usage: /acp set-mode <mode> [session-key|session-id|session-label]";
-export const ACP_SET_USAGE = "Usage: /acp set <key> <value> [session-key|session-id|session-label]";
-export const ACP_CWD_USAGE = "Usage: /acp cwd <path> [session-key|session-id|session-label]";
+  "Usage: `/acp set-mode <mode> [session-key|session-id|session-label]`";
+export const ACP_SET_USAGE =
+  "Usage: `/acp set <key> <value> [session-key|session-id|session-label]`";
+export const ACP_CWD_USAGE = "Usage: `/acp cwd <path> [session-key|session-id|session-label]`";
 export const ACP_PERMISSIONS_USAGE =
-  "Usage: /acp permissions <profile> [session-key|session-id|session-label]";
+  "Usage: `/acp permissions <profile> [session-key|session-id|session-label]`";
 export const ACP_TIMEOUT_USAGE =
-  "Usage: /acp timeout <seconds> [session-key|session-id|session-label]";
+  "Usage: `/acp timeout <seconds> [session-key|session-id|session-label]`";
 export const ACP_MODEL_USAGE =
-  "Usage: /acp model <model-id> [session-key|session-id|session-label]";
+  "Usage: `/acp model <model-id> [session-key|session-id|session-label]`";
 export const ACP_RESET_OPTIONS_USAGE =
   "Usage: /acp reset-options [session-key|session-id|session-label]";
 export const ACP_STATUS_USAGE = "Usage: /acp status [session-key|session-id|session-label]";
@@ -438,21 +442,23 @@ export function resolveAcpHelpText(): string {
   return [
     "ACP commands:",
     "-----",
-    "/acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>]",
-    "/acp cancel [session-key|session-id|session-label]",
-    "/acp steer [--session <session-key|session-id|session-label>] <instruction>",
-    "/acp close [session-key|session-id|session-label]",
-    "/acp status [session-key|session-id|session-label]",
-    "/acp set-mode <mode> [session-key|session-id|session-label]",
-    "/acp set <key> <value> [session-key|session-id|session-label]",
-    "/acp cwd <path> [session-key|session-id|session-label]",
-    "/acp permissions <profile> [session-key|session-id|session-label]",
-    "/acp timeout <seconds> [session-key|session-id|session-label]",
-    "/acp model <model-id> [session-key|session-id|session-label]",
-    "/acp reset-options [session-key|session-id|session-label]",
-    "/acp doctor",
-    "/acp install",
-    "/acp sessions",
+    // Each command line is wrapped in backticks so that `<placeholder>` tokens survive
+    // markdown-rendering channels that would otherwise strip them as HTML tags. See #62877.
+    "`/acp spawn [harness-id] [--mode persistent|oneshot] [--thread auto|here|off] [--bind here|off] [--cwd <path>] [--label <label>]`",
+    "`/acp cancel [session-key|session-id|session-label]`",
+    "`/acp steer [--session <session-key|session-id|session-label>] <instruction>`",
+    "`/acp close [session-key|session-id|session-label]`",
+    "`/acp status [session-key|session-id|session-label]`",
+    "`/acp set-mode <mode> [session-key|session-id|session-label]`",
+    "`/acp set <key> <value> [session-key|session-id|session-label]`",
+    "`/acp cwd <path> [session-key|session-id|session-label]`",
+    "`/acp permissions <profile> [session-key|session-id|session-label]`",
+    "`/acp timeout <seconds> [session-key|session-id|session-label]`",
+    "`/acp model <model-id> [session-key|session-id|session-label]`",
+    "`/acp reset-options [session-key|session-id|session-label]`",
+    "`/acp doctor`",
+    "`/acp install`",
+    "`/acp sessions`",
     "",
     "Notes:",
     "- /acp spawn harness-id is an ACP runtime harness alias (for example codex), not an OpenClaw agents.list id.",

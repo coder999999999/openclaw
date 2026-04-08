@@ -12,7 +12,11 @@ import {
 } from "./flex-templates.js";
 import type { LineChannelData } from "./types.js";
 
-const CARD_USAGE = `Usage: /card <type> "title" "body" [options]
+// Wrapped in a triple-backtick code fence so that `<type>` and `<image-url>` placeholders
+// survive markdown-rendering channels that would otherwise strip them as HTML tags.
+// See #62877.
+const CARD_USAGE = `\`\`\`
+Usage: /card <type> "title" "body" [options]
 
 Types:
   info "Title" "Body" ["Footer"]
@@ -26,7 +30,8 @@ Types:
 Examples:
   /card info "Welcome" "Thanks for joining!"
   /card image "Product" "Check it out" --url https://example.com/img.jpg
-  /card action "Menu" "Choose an option" --actions "Order|/order,Help|/help"`;
+  /card action "Menu" "Choose an option" --actions "Order|/order,Help|/help"
+\`\`\``;
 
 function buildLineReply(lineData: LineChannelData): ReplyPayload {
   return {
