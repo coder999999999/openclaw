@@ -77,8 +77,9 @@ def package_skill(skill_path, output_dir=None):
     # Create the .skill file (zip format)
     try:
         with zipfile.ZipFile(skill_filename, "w", zipfile.ZIP_DEFLATED) as zipf:
-            # Walk through the skill directory
-            for file_path in skill_path.rglob("*"):
+            # Walk through the skill directory. Sort so archive entry order is
+            # deterministic across filesystems (rglob enumeration order is not).
+            for file_path in sorted(skill_path.rglob("*")):
                 # Security: never follow or package symlinks.
                 if file_path.is_symlink():
                     print(f"[WARN] Skipping symlink: {file_path}")
