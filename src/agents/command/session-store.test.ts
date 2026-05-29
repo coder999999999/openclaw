@@ -197,6 +197,118 @@ describe("updateSessionStoreAfterAgentRun", () => {
     });
   });
 
+  it("adopts the rotated session id and file after embedded auto-compaction rotation", async () => {
+    await withTempSessionStore(async ({ storePath }) => {
+      const cfg = {} as OpenClawConfig;
+      const sessionKey = "agent:main:explicit:test-rotation";
+      const sessionId = "pre-rotation-session";
+      const rotatedSessionId = "post-rotation-session";
+      const rotatedSessionFile = "/tmp/post-rotation-session.jsonl";
+      const sessionStore: Record<string, SessionEntry> = {
+        [sessionKey]: {
+          sessionId,
+          sessionFile: "/tmp/pre-rotation-session.jsonl",
+          updatedAt: 1,
+          sessionStartedAt: 1,
+        },
+      };
+      await fs.writeFile(storePath, JSON.stringify(sessionStore, null, 2));
+
+      const result: EmbeddedAgentRunResult = {
+        meta: {
+          durationMs: 1,
+          agentMeta: {
+            // Embedded runner reports the post-rotation openclaw identity here.
+            sessionId: rotatedSessionId,
+            sessionFile: rotatedSessionFile,
+            provider: "openai",
+            model: "gpt-5.5",
+          },
+        },
+      };
+
+      await updateSessionStoreAfterAgentRun({
+        cfg,
+        sessionId,
+        sessionKey,
+        storePath,
+        contextTokensOverride: 200_000,
+        sessionStore,
+        defaultProvider: "openai",
+        defaultModel: "gpt-5.5",
+        result,
+      });
+
+      const persisted = loadSessionStore(storePath);
+      expect(persisted[sessionKey]?.sessionId).toBe(rotatedSessionId);
+      expect(persisted[sessionKey]?.sessionFile).toBe(rotatedSessionFile);
+      // A rotated identity is a new session, so the start timestamp resets rather
+      // than carrying the pre-rotation value.
+      expect(persisted[sessionKey]?.sessionStartedAt).not.toBe(1);
+      expect(sessionStore[sessionKey]?.sessionId).toBe(rotatedSessionId);
+      expect(sessionStore[sessionKey]?.sessionFile).toBe(rotatedSessionFile);
+    });
+  });
+
+  it("keeps the openclaw session id for CLI runs where agentMeta.sessionId is the external tool id", async () => {
+    await withTempSessionStore(async ({ storePath }) => {
+      const cfg = {
+        agents: {
+          defaults: {
+            cliBackends: {
+              "claude-cli": {
+                command: "claude",
+              },
+            },
+          },
+        },
+      } as OpenClawConfig;
+      const sessionKey = "agent:main:explicit:test-cli-no-rotation";
+      const sessionId = "openclaw-session-id";
+      const sessionFile = "/tmp/openclaw-session-id.jsonl";
+      const sessionStore: Record<string, SessionEntry> = {
+        [sessionKey]: {
+          sessionId,
+          sessionFile,
+          updatedAt: 1,
+        },
+      };
+      await fs.writeFile(storePath, JSON.stringify(sessionStore, null, 2));
+
+      const result: EmbeddedAgentRunResult = {
+        meta: {
+          durationMs: 1,
+          agentMeta: {
+            // For CLI providers this is the external tool's session id, not a
+            // rotated openclaw session id, and no sessionFile is emitted — so the
+            // openclaw identity must be left untouched.
+            sessionId: "external-claude-cli-id",
+            provider: "claude-cli",
+            model: "claude-sonnet-4-6",
+          },
+        },
+      };
+
+      await updateSessionStoreAfterAgentRun({
+        cfg,
+        sessionId,
+        sessionKey,
+        storePath,
+        contextTokensOverride: 200_000,
+        sessionStore,
+        defaultProvider: "claude-cli",
+        defaultModel: "claude-sonnet-4-6",
+        result,
+      });
+
+      const persisted = loadSessionStore(storePath);
+      expect(persisted[sessionKey]?.sessionId).toBe(sessionId);
+      expect(persisted[sessionKey]?.sessionFile).toBe(sessionFile);
+      // The external id is recorded only as the CLI binding, never as the openclaw id.
+      expect(persisted[sessionKey]?.cliSessionIds?.["claude-cli"]).toBe("external-claude-cli-id");
+    });
+  });
+
   it("uses the runtime context budget from agent metadata instead of cold fallback", async () => {
     await withTempSessionStore(async ({ storePath }) => {
       const cfg = {} as OpenClawConfig;

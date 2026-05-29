@@ -118,16 +118,29 @@ export async function updateSessionStoreAfterAgentRun(params: {
 
   const preserveUserFacingRunState = params.preserveUserFacingSessionModelState === true;
   const preserveRuntimeModel = params.preserveRuntimeModel === true || preserveUserFacingRunState;
+  // Embedded auto-compaction with `truncateAfterCompaction` rotates the transcript
+  // to a new session id + file mid-run. Adopt the rotated identity so sessions.json
+  // stops pointing at the stale pre-rotation file, whose write lock the next turn
+  // would otherwise block on. Only the embedded runner sets agentMeta.sessionFile;
+  // CLI runs leave it unset and reuse agentMeta.sessionId for the external tool's
+  // id, so this guard never rewrites a CLI session's openclaw identity.
+  const rotatedSessionId = normalizeOptionalString(result.meta.agentMeta?.sessionId);
+  const rotatedSessionFile = normalizeOptionalString(result.meta.agentMeta?.sessionFile);
+  const sessionRotated = Boolean(
+    rotatedSessionFile && rotatedSessionId && rotatedSessionId !== sessionId,
+  );
+  const effectiveSessionId = sessionRotated && rotatedSessionId ? rotatedSessionId : sessionId;
   const entry = sessionStore[sessionKey] ?? {
-    sessionId,
+    sessionId: effectiveSessionId,
     updatedAt: now,
     sessionStartedAt: now,
   };
   const next: SessionEntry = {
     ...entry,
-    sessionId,
+    sessionId: effectiveSessionId,
     updatedAt: now,
-    sessionStartedAt: entry.sessionId === sessionId ? (entry.sessionStartedAt ?? now) : now,
+    sessionStartedAt:
+      entry.sessionId === effectiveSessionId ? (entry.sessionStartedAt ?? now) : now,
     lastInteractionAt: touchInteraction ? now : entry.lastInteractionAt,
     ...(preserveRuntimeModel
       ? {}
@@ -135,6 +148,9 @@ export async function updateSessionStoreAfterAgentRun(params: {
           contextTokens,
         }),
   };
+  if (sessionRotated && rotatedSessionFile) {
+    next.sessionFile = rotatedSessionFile;
+  }
   if (preserveRuntimeModel) {
     // Keep the pre-existing runtime model and context window so a background
     // heartbeat turn using a different model does not bleed into the main
